@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مشغل فيديو m3u8</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .video-player {
+            object-fit: contain;
+            background-color: #000;
+            max-width: 100%;
+            max-height: 100%;
+            cursor: pointer; /* تغيير المؤشر لإظهار أنه يمكن النقر */
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            opacity: 0;
+            transition: opacity 0.3s; /* تأثير ظهور واختفاء الأزرار */
+        }
+
+        .controls.visible {
+            opacity: 1;
+        }
+
+        .control-btn {
+            background-color: rgba(255, 255, 255, 0.8);
+            border: none;
+            padding: 10px 20px;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:hover {
+            background-color: rgba(255, 255, 255, 1);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container" id="video-container">
+        <video id="video" class="video-player" autoplay muted></video>
+        <div class="controls" id="controls">
+            <button id="prev" class="control-btn">&#8592;</button> <!-- سهم لليسار -->
+            <button id="mute" class="control-btn">&#128266;</button> <!-- أيقونة الصوت -->
+            <button id="next" class="control-btn">&#8594;</button> <!-- سهم لليمين -->
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script>
+        const video = document.getElementById('video');
+        const controls = document.getElementById('controls');
+        const prevButton = document.getElementById('prev');
+        const nextButton = document.getElementById('next');
+        const muteButton = document.getElementById('mute');
+
+        let hideControlsTimeout;
+
+        // قائمة الفيديوهات بصيغة m3u8
+        const videoList = [
+            'video1.m3u8',
+            'video2.m3u8',
+            'video3.m3u8',
+            'video4.m3u8'
+        ];
+
+        let currentVideoIndex = 0;
+
+        // إعداد HLS.js لتشغيل ملفات m3u8
+        function playVideo(index) {
+            if (index < 0 || index >= videoList.length) return;
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(videoList[index]);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play();
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = videoList[index];
+                video.play();
+            } else {
+                console.error('HLS غير مدعوم على هذا المتصفح.');
+            }
+        }
+
+        // تشغيل الفيديو الأول عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', () => {
+            playVideo(currentVideoIndex);
+        });
+
+        // إظهار الأزرار
+        function showControls() {
+            controls.classList.add('visible');
+            resetHideControlsTimeout();
+        }
+
+        // إخفاء الأزرار
+        function hideControls() {
+            controls.classList.remove('visible');
+        }
+
+        // إعادة تعيين المؤقت لإخفاء الأزرار
+        function resetHideControlsTimeout() {
+            clearTimeout(hideControlsTimeout);
+            hideControlsTimeout = setTimeout(hideControls, 3000); // 3 ثوانٍ
+        }
+
+        // إظهار الأزرار عند لمس الشاشة
+        document.addEventListener('click', () => {
+            showControls();
+        });
+
+        // تشغيل الفيديو السابق
+        prevButton.addEventListener('click', () => {
+            currentVideoIndex = currentVideoIndex === 0 ? videoList.length - 1 : currentVideoIndex - 1;
+            playVideo(currentVideoIndex);
+        });
+
+        // تشغيل الفيديو التالي
+        nextButton.addEventListener('click', () => {
+            currentVideoIndex = currentVideoIndex === videoList.length - 1 ? 0 : currentVideoIndex + 1;
+            playVideo(currentVideoIndex);
+        });
+
+        // التحكم بالصوت
+        muteButton.addEventListener('click', () => {
+            video.muted = !video.muted;
+            muteButton.innerHTML = video.muted ? '&#128263;' : '&#128266;';
+        });
+
+        // تشغيل/إيقاف الفيديو عند النقر عليه
+        video.addEventListener('click', () => {
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        });
+    </script>
+</body>
+</html>
